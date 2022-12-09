@@ -9,23 +9,58 @@ import { mappingCreativeAndCampaign } from './mappingCreativeAndCampaign';
 import CreativeCategory from "./components/CreativeCategory";
 import CreativeRow from "./components/CreativeRow";
 import CampaignCell from "./components/CampaignCell";
-import { useForm } from "react-hook-form";
-import { FormProvider } from "rc-field-form";
+import { useForm, FormProvider } from "react-hook-form";
 
 function getAllConfigurations(creativeSetTypes) {
   return creativeSetTypes.reduce((listConfigurations, creativeSetType) => {
-    return [].concat(listConfigurations).concat(creativeSetType.creativeConfigurations);
+    return [].concat(listConfigurations).concat(creativeSetType.creativeConfigurations.map((config) => ({
+      ...config,
+      setType: creativeSetType.name,
+      setTypeId: creativeSetType.id,
+    })));
   }, []);
 }
 
-function getMatchConfiguration(configurations, { fileType, fileWidth, fileHeight }) {
-  return configurations.find((configuration) => {
-    const ratio = fileWidth / fileHeight;
+function getMatchConfiguration(configurations, creativeItem, existedSlot) {
+  const fileWidth = creativeItem.resolution.width;
+  const fileHeight = creativeItem.resolution.height;
+  const fileType = creativeItem.file_type;
+  const ratio = fileWidth / fileHeight;
+  const index = configurations.findIndex((configuration, index) => {
     const isRatioMatch = ratio >= configuration.metadata.min_ratio && ratio <= configuration.metadata.max_ratio;
-    // const isMatchDimension = fileWidth max_dimension
-    return configuration.file_types.includes(fileType);
+    const isWidthMatchDimension = fileWidth >= configuration.metadata.min_dimension && fileWidth <= configuration.metadata.max_dimension;
+    const isHeightMatchDimension = fileHeight >= configuration.metadata.min_dimension && fileHeight <= configuration.metadata.max_dimension;
+    const generalCondition = configuration.file_types.includes(fileType) && isRatioMatch && !existedSlot[index];
+    if (fileType === 'video') {
+      return generalCondition;
+    }
+    return generalCondition && isWidthMatchDimension && isHeightMatchDimension;
   });
+
+  return {
+    index: index,
+    data: index === -1 ? null : ({
+      type: "videoAndCarousel",
+      typeId: "f230a39c-1653-4495-9221-d7bebf51b5b4",
+      ratio: ratio,
+      resolution: `${fileWidth}x${fileHeight}`,
+      name: creativeItem.name,
+      drive_url: "http://img.google.com/abcxyz.jpg", // I don't know how to get
+      mimeType: creativeItem.mimeType,
+      file_size: creativeItem.file_size,
+      file_type: creativeItem.file_type,
+      id: creativeItem.id,
+      usageType: configurations[index].type,
+    }),
+  };
 }
+
+const CONFIGURATION_MAP = campaigns.reduce((campaignMap, campaign) => {
+  return {
+    ...campaignMap,
+    [campaign.id]: getAllConfigurations(campaign.channel.creativeSetTypes),
+  }
+}, {});
 
 export default function ConfirmCreative() {
   const creativeImages = creatives.filter((creative) =>  ["png", "jpg", "jpeg", "gif"].includes(creative.file_type));
@@ -33,41 +68,20 @@ export default function ConfirmCreative() {
   const creativeVideos = creatives.filter((creative) => ["video"].includes(creative.file_type));
   const methods = useForm({
     defaultValues: {
-      appIds: ["bf16dd34-cc44-49f7-9874-28ee9809833d"],
+      appIds: ['bf16dd34-cc44-49f7-9874-28ee9809833d'],
       campaignIds: campaigns.map((campaign) => campaign.id),
       channelIds: campaigns.map((campaign) => campaign.channel.id),
-      language: "en",
-      summary: "Creative Summary",
+      language: 'en',
+      summary: 'Creative Summary',
       campaignsWithCreativeSets: campaigns.map((campaign) => ({
         id: campaign.id,
         sets: [],
       })),
-      // "campaignsWithCreativeSets": [
-      //   {
-      //     "id": "4c4ae977-4f1b-4aa5-9f7b-ecbf57f85759",
-      //     "sets": [
-      //       {
-      //         "type": "videoAndCarousel",
-      //         "typeId": "f230a39c-1653-4495-9221-d7bebf51b5b4",
-      //         "creatives": [
-      //           {
-      //             "ratio": 1,
-      //             "resolution": "1920x1080",
-      //             "name": "creative1.png",
-      //             "drive_url": "http://img.google.com/abcxyz.jpg",
-      //             "mimeType": "image/png",
-      //             "file_size": 20442,
-      //             "file_type": "image",
-      //             "id": "ID_IMAGE_FROM_GOOGLE_DRIVE",
-      //             "usageType": "left"
-      //           }
-      //         ],
-      //       }
-      //     ]
-      //   }
-      // ]
+      selectedMatrix: {},
     }
-  })
+  });
+  const result = methods.watch('campaignsWithCreativeSets');
+  console.log({ result });
 
   function handleDeleteCampaignColumn(campaign) {
     console.log('handleDeleteCampaignColumn', campaign)
@@ -77,17 +91,37 @@ export default function ConfirmCreative() {
     console.log('handleDeleteCreativeRow', creative)
   }
 
-  const getEmptySlot = useCallback((configurations, fileType, fileWidth, fileHeight, campaignIndex) => {
-    const slot = getMatchConfiguration(configurations, fileType, fileWidth, fileHeight);
-  }, []);
+  const calculateWithMatchConfiguration = useCallback((configurations, creativeItem, campaignIndex) => {
+    const existSlots = methods.getValues(`campaignsWithCreativeSets.${campaignIndex}.sets`);
+    const existedSlot = existSlots.reduce((slotExistMap, existSlot, slotIndex) => {
+      if (existSlot) {
+        return {
+          ...slotExistMap,
+          [slotIndex]: true,
+        }
+      }
+      return slotExistMap;
+    }, {});
+    const { index, data } = getMatchConfiguration(configurations, creativeItem, existedSlot);
+    if (index > -1) {
+      methods.setValue(`campaignsWithCreativeSets.${campaignIndex}.sets.${index}`, data);
+      methods.setValue(`selectedMatrix.${campaignIndex}.${creativeItem.id}`, index);
+    } else {
+      alert('No match configuration');
+    }
+  }, [methods]);
 
 
   function onChangeCreativeCell(checked, creativeItem, campaignItem, campaignIndex) {
     console.log('onChange: ', {checked, creativeItem, campaignItem});
-    const fileWidth = creativeItem.resolution.width;
-    const fileHeight = creativeItem.resolution.height;
-    const fileType = creativeItem.file_type;
-    const configurations = getAllConfigurations(campaignItem.channel.creativeSetTypes);
+    const configurations = CONFIGURATION_MAP[campaignItem.id];
+    if (checked === false) {
+      const index = methods.getValues(`selectedMatrix.${campaignIndex}.${creativeItem.id}`);
+      methods.setValue(`campaignsWithCreativeSets.${campaignIndex}.sets.${index}`, null);
+      methods.setValue(`selectedMatrix.${campaignIndex}.${creativeItem.id}`, null);
+      return;
+    }
+    calculateWithMatchConfiguration(configurations, creativeItem, campaignIndex)
   }
 
 
@@ -127,6 +161,7 @@ export default function ConfirmCreative() {
                     campaigns={campaigns}
                     handleDeleteCreativeRow={handleDeleteCreativeRow}
                     onChangeCreativeCell={onChangeCreativeCell}
+                    configurations={CONFIGURATION_MAP}
                   />
                 ))}
 
@@ -137,6 +172,7 @@ export default function ConfirmCreative() {
                     campaigns={campaigns}
                     handleDeleteCreativeRow={handleDeleteCreativeRow}
                     onChangeCreativeCell={onChangeCreativeCell}
+                    configurations={CONFIGURATION_MAP}
                   />
                 ))}
               </>
@@ -153,6 +189,7 @@ export default function ConfirmCreative() {
                     campaigns={campaigns}
                     handleDeleteCreativeRow={handleDeleteCreativeRow}
                     onChangeCreativeCell={onChangeCreativeCell}
+                    configurations={CONFIGURATION_MAP}
                   />
                 ))}
 
@@ -163,6 +200,7 @@ export default function ConfirmCreative() {
                     campaigns={campaigns}
                     handleDeleteCreativeRow={handleDeleteCreativeRow}
                     onChangeCreativeCell={onChangeCreativeCell}
+                    configurations={CONFIGURATION_MAP}
                   />
                 ))}
               </>
@@ -179,6 +217,7 @@ export default function ConfirmCreative() {
                     campaigns={campaigns}
                     handleDeleteCreativeRow={handleDeleteCreativeRow}
                     onChangeCreativeCell={onChangeCreativeCell}
+                    configurations={CONFIGURATION_MAP}
                   />
                 ))}
 
@@ -189,6 +228,7 @@ export default function ConfirmCreative() {
                     campaigns={campaigns}
                     handleDeleteCreativeRow={handleDeleteCreativeRow}
                     onChangeCreativeCell={onChangeCreativeCell}
+                    configurations={CONFIGURATION_MAP}
                   />
                 ))}
               </>

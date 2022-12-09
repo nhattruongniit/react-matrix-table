@@ -5,10 +5,11 @@ import { Checkbox, Tooltip } from "antd";
 
 // ant icons
 import { DeleteOutlined } from "@ant-design/icons";
+import { useFormContext } from "react-hook-form";
 
 
-function CreativeRow({ creative, campaigns, handleDeleteCreativeRow, onChangeCreativeCell }) {
-
+function CreativeRow({ creative, campaigns, handleDeleteCreativeRow, onChangeCreativeCell, configurations }) {
+  const { getValues } = useFormContext();
   return (
     <tr>
       <td className="bg-[#fef3fc] cellStickyCreative">
@@ -24,12 +25,13 @@ function CreativeRow({ creative, campaigns, handleDeleteCreativeRow, onChangeCre
           </div>
         </div>
       </td>
-      {campaigns.map((campaign) => {
+      {campaigns.map((campaign, index) => {
         return (
           <td key={campaign.id} align="center">
             <Checkbox 
-              disabled={campaign.channel.creativeSetTypes.length === 0} 
-              onChange={(event) => onChangeCreativeCell(event.target.checked, creative, campaign)} 
+              disabled={campaign.channel.creativeSetTypes.length === 0 || (getValues(`campaignsWithCreativeSets.${index}.sets`).length >= configurations[campaign.id].length)}
+              checked={getValues(`selectedMatrix.${index}.${creative.id}`) >= 0}
+              onChange={(event) => onChangeCreativeCell(event.target.checked, creative, campaign, index)} 
             />
           </td>
         );

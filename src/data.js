@@ -14,9 +14,9 @@ export const creatives = [
   {
     duration: undefined,
     file_size: 454484,
-    file_type: "html",
+    file_type: "png",
     id: "1Nrjhr2E8ETvW0ddLAA04qa3PGohCj98y",
-    mimeType: "text/html",
+    mimeType: "image/png",
     name: "540x960.png",
     resolution: {
       height: 960,
@@ -130,7 +130,7 @@ export const campaigns = [
               metadata: {
                 max_ratio: 3840,
                 min_ratio: 1.3333333333333333,
-                max_dimension: 320,
+                max_dimension: 990,
                 min_dimension: 1.3333333333333333,
               },
               name: "Image",
@@ -154,7 +154,7 @@ export const campaigns = [
               metadata: {
                 max_ratio: 3840,
                 min_ratio: 0.5625,
-                max_dimension: 320,
+                max_dimension: 1100,
                 min_dimension: 0.5625,
               },
               name: "image",
@@ -165,9 +165,9 @@ export const campaigns = [
               file_size: 2000000,
               file_types: ["png", "jpg", "jpeg", "gif"],
               metadata: {
-                max_ratio: 3840,
+                max_ratio: 3,
                 min_ratio: 1.7777777777777777,
-                max_dimension: 320,
+                max_dimension: 3840,
                 min_dimension: 1.7777777777777777,
               },
               name: "image",
@@ -248,6 +248,8 @@ export const campaigns = [
               metadata: {
                 max_ratio: 2,
                 min_ratio: 0.5,
+                max_dimension: 3840,
+                min_dimension: 320,
               },
               name: "Video",
               type: null,
