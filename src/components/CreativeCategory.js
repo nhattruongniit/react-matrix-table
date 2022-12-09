@@ -28,12 +28,12 @@ function CreativeCategory({ name, length, creative, campaigns, handleDeleteCreat
           </div>
         </div>
       </td>
-      {campaigns.map((campaign) => {
+      {campaigns.map((campaign, index) => {
         return (
           <td key={campaign.id} align="center">
             <Checkbox 
               disabled={campaign.channel.creativeSetTypes.length === 0} 
-              onChange={(event) => onChangeCreativeCell(event.target.checked, creative, campaign)} 
+              onChange={(event) => onChangeCreativeCell(event.target.checked, creative, campaign, index)} 
             />
           </td>
         );
