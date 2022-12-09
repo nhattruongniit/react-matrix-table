@@ -16,7 +16,7 @@ export const creatives = [
     file_size: 454484,
     file_type: "html",
     id: "1Nrjhr2E8ETvW0ddLAA04qa3PGohCj98y",
-    mimeType: "image/png",
+    mimeType: "text/html",
     name: "540x960.png",
     resolution: {
       height: 960,
@@ -325,3 +325,35 @@ export const campaigns = [
     }
   },
 ]
+
+export const bodyData = {
+  appIds: ["bf16dd34-cc44-49f7-9874-28ee9809833d"],
+  campaignIds: ["4c4ae977-4f1b-4aa5-9f7b-ecbf57f85759"],
+  channelIds: ["481b18b5-3387-4f7c-b60c-25a908e5c5cc"],
+  language: "en",
+  summary: "Creative Summary",
+  campaignsWithCreativeSets: [
+    {
+      "id": "4c4ae977-4f1b-4aa5-9f7b-ecbf57f85759", // campaign id
+      "sets": [
+        {
+          "type": "videoAndCarousel", // set name
+          "typeId": "f230a39c-1653-4495-9221-d7bebf51b5b4", // setId
+          "creatives": [
+            {
+              "ratio": 1,
+              "resolution": "1920x1080",
+              "name": "creative1.png",
+              "drive_url": "http://img.google.com/abcxyz.jpg",
+              "mimeType": "image/png",
+              "file_size": 20442,
+              "file_type": "image",
+              "id": "ID_IMAGE_FROM_GOOGLE_DRIVE",
+              "usageType": "left"
+            }
+          ],
+        }
+      ]
+    }
+  ]
+}

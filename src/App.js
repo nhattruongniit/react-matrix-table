@@ -3,6 +3,8 @@ import React, { useCallback } from "react";
 // mock data
 import { creatives, campaigns } from "./data";
 
+import { mappingCreativeAndCampaign } from './mappingCreativeAndCampaign';
+
 // components
 import CreativeCategory from "./components/CreativeCategory";
 import CreativeRow from "./components/CreativeRow";
@@ -88,8 +90,10 @@ export default function ConfirmCreative() {
     const configurations = getAllConfigurations(campaignItem.channel.creativeSetTypes);
   }
 
-  console.log({creatives, campaigns})
 
+  const res = mappingCreativeAndCampaign(creatives, campaigns);
+
+  console.log({creatives, campaigns, res})
 
   return (
     <FormProvider {...methods}>
@@ -195,3 +199,4 @@ export default function ConfirmCreative() {
     </FormProvider>
   );
 }
+
