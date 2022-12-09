@@ -3,6 +3,8 @@ import React from "react";
 // mock data
 import { creatives, campaigns } from "./data";
 
+import { mappingCreativeAndCampaign } from './mappingCreativeAndCampaign';
+
 // components
 import CreativeCategory from "./components/CreativeCategory";
 import CreativeRow from "./components/CreativeRow";
@@ -26,8 +28,10 @@ export default function ConfirmCreative() {
     console.log('onChange: ', {checked, creativeItem, campaignItem});
   }
 
-  console.log({creatives, campaigns})
 
+  const res = mappingCreativeAndCampaign(creatives, campaigns);
+
+  console.log({creatives, campaigns, res})
 
   return (
     <div className="flex mb-8 w-full overflow-x-auto max-h-[700px]">
