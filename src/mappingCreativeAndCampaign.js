@@ -19,22 +19,13 @@ export function mappingCreativeAndCampaign(creativesList, campaignsList) {
           // metadata
           const ratio = file.resolution.width / file.resolution.height;
 
-          if (file.mimeType.startsWith("video") && configName === 'video') {
+          if (file.mimeType.startsWith("video") && config.file_types.includes(file.file_type)) {
             const isMatch = _.inRange(ratio, config.metadata.min_ratio, config.metadata.max_ratio);
 
-            if (isMatch) {
-              return { file, configId: config.id };
-            }
-          } else if (file.mimeType.startsWith("image") && configName === 'image') {
-            const isMatch =
-              _.inRange(ratio, config.metadata.min_ratio, config.metadata.max_ratio) &&
-              (_.inRange(file.resolution.width, config.metadata.min_dimension, config.metadata.max_dimension) ||
-                _.inRange(file.resolution.height, config.metadata.min_dimension, config.metadata.max_dimension));
-
-            if (isMatch) {
-              return { file, configId: config.id };
-            }
-          } else if (file.mimeType === "text/html" && configName === 'html') {
+            return { file, configId: config.id };
+          } else if (file.mimeType.startsWith("image") && config.file_types.includes(file.file_type)) {
+            return { file, configId: config.id };
+          } else if (file.mimeType === "text/html" && config.file_types.includes(file.file_type)) {
             return { file, configId: config.id };
           }
         }, undefined);

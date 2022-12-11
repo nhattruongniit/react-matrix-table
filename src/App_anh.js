@@ -21,16 +21,16 @@ function getAllConfigurations(creativeSetTypes) {
   }, []);
 }
 
-function getMatchConfiguration(configurations, creativeItem) {
+function getMatchConfiguration(configurations, creativeItem, existedSlot) {
   const fileWidth = creativeItem.resolution.width;
   const fileHeight = creativeItem.resolution.height;
   const fileType = creativeItem.file_type;
   const ratio = fileWidth / fileHeight;
-  const index = configurations.findIndex((configuration) => {
+  const index = configurations.findIndex((configuration, index) => {
     const isRatioMatch = ratio >= configuration.metadata.min_ratio && ratio <= configuration.metadata.max_ratio;
     const isWidthMatchDimension = fileWidth >= configuration.metadata.min_dimension && fileWidth <= configuration.metadata.max_dimension;
     const isHeightMatchDimension = fileHeight >= configuration.metadata.min_dimension && fileHeight <= configuration.metadata.max_dimension;
-    const generalCondition = configuration.file_types.includes(fileType) && isRatioMatch;
+    const generalCondition = configuration.file_types.includes(fileType) && isRatioMatch && !existedSlot[index];
     if (fileType === 'video') {
       return generalCondition;
     }
@@ -62,12 +62,29 @@ const CONFIGURATION_MAP = campaigns.reduce((campaignMap, campaign) => {
   }
 }, {});
 
+console.log('CONFIGURATION_MAP: ', CONFIGURATION_MAP)
 
 export default function ConfirmCreative() {
   const creativeImages = creatives.filter((creative) =>  ["png", "jpg", "jpeg", "gif"].includes(creative.file_type));
   const creativePlayables = creatives.filter((creative) => ["html"].includes(creative.file_type));
   const creativeVideos = creatives.filter((creative) => ["video"].includes(creative.file_type));
- 
+  const methods = useForm({
+    defaultValues: {
+      appIds: ['bf16dd34-cc44-49f7-9874-28ee9809833d'],
+      campaignIds: campaigns.map((campaign) => campaign.id),
+      channelIds: campaigns.map((campaign) => campaign.channel.id),
+      language: 'en',
+      summary: 'Creative Summary',
+      campaignsWithCreativeSets: campaigns.map((campaign) => ({
+        id: campaign.id,
+        sets: [],
+      })),
+      selectedMatrix: {},
+    }
+  });
+  const result = methods.watch('campaignsWithCreativeSets');
+  console.log({ result });
+
   function handleDeleteCampaignColumn(campaign) {
     console.log('handleDeleteCampaignColumn', campaign)
   }
@@ -76,29 +93,46 @@ export default function ConfirmCreative() {
     console.log('handleDeleteCreativeRow', creative)
   }
 
+  const calculateWithMatchConfiguration = useCallback((configurations, creativeItem, campaignIndex) => {
+    const existSlots = methods.getValues(`campaignsWithCreativeSets.${campaignIndex}.sets`);
+    const existedSlot = existSlots.reduce((slotExistMap, existSlot, slotIndex) => {
+      if (existSlot) {
+        return {
+          ...slotExistMap,
+          [slotIndex]: true,
+        }
+      }
+      return slotExistMap;
+    }, {});
+    const { index, data } = getMatchConfiguration(configurations, creativeItem, existedSlot);
+    if (index > -1) {
+      methods.setValue(`campaignsWithCreativeSets.${campaignIndex}.sets.${index}`, data);
+      methods.setValue(`selectedMatrix.${campaignIndex}.${creativeItem.id}`, index);
+    } else {
+      alert('No match configuration');
+    }
+  }, [methods]);
+
+
   function onChangeCreativeCell(checked, creativeItem, campaignItem, campaignIndex) {
     console.log('onChange: ', {checked, creativeItem, campaignItem});
+    const configurations = CONFIGURATION_MAP[campaignItem.id];
+    if (checked === false) {
+      const index = methods.getValues(`selectedMatrix.${campaignIndex}.${creativeItem.id}`);
+      methods.setValue(`campaignsWithCreativeSets.${campaignIndex}.sets.${index}`, null);
+      methods.setValue(`selectedMatrix.${campaignIndex}.${creativeItem.id}`, null);
+      return;
+    }
+    calculateWithMatchConfiguration(configurations, creativeItem, campaignIndex)
   }
 
-  const configurationMapCloned = JSON.parse(JSON.stringify(CONFIGURATION_MAP));
-  const lengthCreative = creatives.length;
 
-  function recursion() {
-    Object.keys(CONFIGURATION_MAP).forEach((campaignId) => {
-      const configurations = CONFIGURATION_MAP[campaignId];
-      console.log('configurations', configurations);
-    })
-  }
+  const res = mappingCreativeAndCampaign(creatives, campaigns);
 
-  
-
- 
-
-  console.log({creatives, campaigns, CONFIGURATION_MAP})
-
+  console.log({creatives, campaigns, res})
 
   return (
-    <FormProvider>
+    <FormProvider {...methods}>
       <div className="flex mb-8 w-full overflow-x-auto max-h-[700px]">
         <table width="100%" cellPadding={0} cellSpacing={0} className="tableMatrixCreative">
           <thead>
