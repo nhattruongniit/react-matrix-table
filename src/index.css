@@ -100,3 +100,16 @@ code {
   bottom: 0;
   margin: auto;
 }
+
+
+.tableMatrix {
+  border: 1px solid #000
+}
+
+.tableMatrix tr {
+  border: 1px solid #000
+}
+
+.tableMatrix td {
+  border: 1px solid #000
+}
